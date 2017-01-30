@@ -3,8 +3,7 @@ This is Week2 Project 1 Assignment for AI eDX course
 """
 import sys
 import time
-import queue
-#import resource
+import resource
 from math import sqrt
 
 class Queue():
@@ -91,13 +90,14 @@ class Board:
                 return True
         return False
 
-    # def print_board(self):
-    #     """Prints the game board"""
-    #     for row_iterator in range(0, self.side_length):
-    #         for col_iterator in range(0, self.side_length):
-    #             print(str(self.board[(row_iterator * self.side_length) + col_iterator]) + " ", end="")
-    #         print("")
-    #     return Board(list(self.board))
+    def print_board(self):
+        """Prints the game board"""
+        board_list = self.unique_board.split(',')
+        for row_iterator in range(0, self.side_length):
+            for col_iterator in range(0, self.side_length):
+                print(str(board_list[(row_iterator * self.side_length) + col_iterator]) + " "
+                      , end="")
+            print("")
 
 class GameResult:
     """Game result class"""
@@ -151,11 +151,10 @@ def print_explored_dictionary(dictionary):
     for value in dictionary.values():
         value.print_board()
 
-def bfs_dfs(initial_board, final_goal, is_BFS):
+def bfs_dfs(initial_board, final_goal, is_bfs):
     """BFS and DFS Algorithm"""
     time_start = time.time()
-    check_time_counter = 0
-    if is_BFS:
+    if is_bfs:
         frontier = Queue()
     else:
         frontier = Stack()
@@ -166,7 +165,7 @@ def bfs_dfs(initial_board, final_goal, is_BFS):
     max_level = 0
 
     initial_board.level = 0
-    if is_BFS:
+    if is_bfs:
         frontier.enqueue(initial_board)
     else:
         frontier.push(initial_board)
@@ -174,7 +173,6 @@ def bfs_dfs(initial_board, final_goal, is_BFS):
 
     while not frontier.is_empty():
         fringe_size = frontier.size()
-        #print(max_fringe_size)
         if fringe_size > max_fringe_size:
             max_fringe_size = fringe_size
         state = frontier.remove()
@@ -187,25 +185,24 @@ def bfs_dfs(initial_board, final_goal, is_BFS):
             result.max_fringe_size = max_fringe_size
             result.max_search_depth = max_level
             result.running_time = round(time.time() - time_start, 8)
-            result.max_ram_usage = 0 #round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024/ 1024, 8) # Converting into MB
+            ram_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            result.max_ram_usage = round(ram_usage / 1024/ 1024, 8) # Converting into MB
             return result
         is_expanded = False
         neighbours = state.get_neighbours()
-        if not is_BFS:
+        if not is_bfs:
             neighbours = neighbours[::-1] #reverse
         for neighbour in neighbours:
-            time_check_start = time.time()
             cond1 = frontier_hashed.get(neighbour.unique_board) is None
             cond2 = explored.get(neighbour.unique_board) is None
-            check_time_counter += time.time() - time_check_start
+            is_expanded = True
             if cond1 and cond2:
-                is_expanded = True
                 new_level = state.level + 1
                 neighbour.level = new_level
                 if new_level > max_level:
                     max_level = new_level
                 neighbour.parent = state.unique_board
-                if is_BFS:
+                if is_bfs:
                     frontier.enqueue(neighbour)
                 else:
                     frontier.push(neighbour)
@@ -217,52 +214,58 @@ def bfs_dfs(initial_board, final_goal, is_BFS):
 def ast(initial_board, final_goal):
     """DFS Algorithm"""
     print(initial_board)
+    print(final_goal)
 
 def ida(initial_board, final_goal):
     """IDA Algorithm"""
     print(initial_board)
+    print(final_goal)
 
-arguments = sys.argv
-#if len(arguments) < 3:
-#    print("Usage driver.py <method> <board>")
-#    exit(-2)
-
-#method = arguments[1]
-#input_board = arguments[2].split(',')
-method = "dfs"
-input_board = "5,3,2,7,4,0,6,1,8"
-input_board_array = input_board.split(',')
-
-for num in input_board_array:
-    try:
-        n = int(num)
-    except ValueError:
-        print("The text %s is not a number. Please renter the board" % num)
+def main():
+    """Main entry function"""
+    arguments = sys.argv
+    if len(arguments) < 3:
+        print("Usage driver.py <method> <board>")
         exit(-2)
 
-length = len(input_board_array)
-side_length = sqrt(length)
-if side_length**2 != length:
-    print("The dimensions of the boards seems not right. Please enter the board such that the number of elements is a perfect square!!")
-    exit(-2)
+    method = arguments[1]
+    input_board = arguments[2]
+    input_board_array = input_board.split(',')
 
-game_board = Board(input_board, length)
+    for num in input_board_array:
+        try:
+            int(num)
+        except ValueError:
+            print("The text %s is not a number. Please renter the board" % num)
+            exit(-2)
 
-goal = []
-for num in range(0, length):
-    goal.append(str(num))
-goal_state = Board(",".join(goal), length)
+    length = len(input_board_array)
+    side_length = sqrt(length)
+    if side_length**2 != length:
+        print("The dimensions of the boards seems not right. Please enter the "/
+              "board such that the number of elements is a perfect square!!")
+        exit(-2)
 
-if method == "bfs" or method == "dfs":
-    game_result = bfs_dfs(game_board, goal_state, method == "bfs")
-    if game_result is None:
-        print("Couldn't find the desired steps in " + method.upper() +" algorithm")
+    game_board = Board(input_board, length)
+
+    goal = []
+    for num in range(0, length):
+        goal.append(str(num))
+    goal_state = Board(",".join(goal), length)
+
+    if method == "bfs" or method == "dfs":
+        game_result = bfs_dfs(game_board, goal_state, method == "bfs")
+        if game_result is None:
+            print("Couldn't find the desired steps in " + method.upper() +" algorithm")
+        else:
+            game_result.print_result()
+    elif method == "ast":
+        ast(game_board, goal_state)
+    elif method == "ida":
+        ida(game_board, goal_state)
     else:
-        game_result.print_result()
-elif method == "ast":
-    ast(game_board, goal_state)
-elif method == "ida":
-    ida(game_board, goal_state)
-else:
-    print("Incorrect syntax for method. Use one of the "/
-          "following algorithms - <bfs>, <dfs>, <ast>, <ida>")
+        print("Incorrect syntax for method. Use one of the "/
+              "following algorithms - <bfs>, <dfs>, <ast>, <ida>")
+
+if __name__ == "__main__":
+    sys.exit(main())
