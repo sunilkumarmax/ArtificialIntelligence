@@ -1,6 +1,6 @@
 """
 This is Week2 Project 1 Assignment for AI eDX course
-This version has ida implemented with AStar
+This version has ida implemented with DFS
 """
 import copy
 from math import sqrt
@@ -322,12 +322,12 @@ class PathSolver:
         self.initial_board = initial_board
         self.final_goal = final_goal
 
-    def solve_puzzle(self, method, threshold):
-        """BFS and DFS Algorithm"""
+    def solve_puzzle(self, method):
+        """Solves the puzzle using BFS, DFS, AST or IDA Algorithm"""
         time_start = time.time()
         if method == "bfs":
             frontier = Queue()
-        elif method == "dfs":
+        elif method == "dfs" or method == "ida":
             frontier = Stack()
         elif method == "astar":
             frontier = Heap(True)
@@ -365,13 +365,15 @@ class PathSolver:
                 return result
             neighbours = state.get_neighbours()
             if method == "dfs":
-                neighbours = neighbours[::-1] #reverse
+                neighbours.reverse()
+            if method == "ida":
+                neighbours.sort(key=lambda x: x.manhattan_distance + state.level + 1, reverse=True)
             nodes_expanded += 1
             for neighbour in neighbours:
                 new_level = neighbour.level
-                if method == "astar":
+                if method == "ida":
                     cost = neighbour.manhattan_distance + new_level
-                    if cost > threshold:
+                    if cost > self.threshold:
                         if cost < next_threshold:
                             next_threshold = cost
                         continue
@@ -390,7 +392,7 @@ class PathSolver:
                                            , IndexLevelHolder(
                                                frontier.percolate_up(index_level.index)
                                                , new_level))
-        if method == "astar":
+        if method == "ida":
             game_result = GameResult(explored, self.final_goal)
             game_result.next_threshold = next_threshold
             return game_result
@@ -398,31 +400,28 @@ class PathSolver:
 
     def bfs(self):
         """Implements the bfs algorithm"""
-        return self.solve_puzzle("bfs", None)
+        return self.solve_puzzle("bfs")
 
     def dfs(self):
         """Implements the dfs algorithm"""
-        return self.solve_puzzle("dfs", None)
+        return self.solve_puzzle("dfs")
 
     def ast(self):
         """DFS Algorithm"""
-        game_result = self.solve_puzzle("astar", sys.maxsize)
-        if game_result.result_found:
-            return game_result
-        return None
+        return self.solve_puzzle("astar")
 
     def ida(self):
         """IDA Algorithm"""
-        threshold = 1
+        self.threshold = 1
         prev_threshold = 0
-        while threshold < sys.maxsize:
-            game_result = self.solve_puzzle("astar", threshold)
+        while self.threshold < sys.maxsize:
+            game_result = self.solve_puzzle("ida")
             if game_result.result_found:
                 return game_result
             else:
-                prev_threshold = threshold
-                threshold = game_result.next_threshold
-                if prev_threshold == threshold:
+                prev_threshold = self.threshold
+                self.threshold = game_result.next_threshold
+                if prev_threshold == self.threshold:
                     return None
 
 def main():
