@@ -4,7 +4,7 @@ This version has ida implemented with AStar
 """
 import copy
 from math import sqrt
-import resource
+#import resource
 import sys
 import time
 import traceback
@@ -359,7 +359,7 @@ class PathSolver:
                 result.max_fringe_size = max_fringe_size
                 result.max_search_depth = max_level
                 result.running_time = round(time.time() - time_start, 8)
-                ram_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+                ram_usage = 0#resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
                 result.max_ram_usage = round(ram_usage / 1024/ 1024, 8) # Converting into MB
                 result.result_found = True
                 return result
